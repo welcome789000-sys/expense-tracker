@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expense Tracker</title>
+<style>
+  /* ---------- Design tokens ---------- */
+  :root {
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --primary: #4f46e5;
+    --primary-dark: #4338ca;
+    --danger: #ef4444;
+    --radius: 14px;
+    --shadow: 0 4px 16px rgba(31, 41, 55, 0.06);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  .container {
+    max-width: 1100px;
+
+    margin: 0 auto;
+    padding: 24px 16px 48px;
+  }
+
+  header { margin-bottom: 24px; }
+  header h1 { font-size: 1.8rem; }
+  header p { color: var(--muted); }
+
+  /* ---------- Summary cards ---------- */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+  }
+  .stat-value { font-size: 1.7rem; font-weight: 700; margin-top: 4px; }
+  .stat-sub { font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
+
+
+  /* ---------- Main layout ---------- */
+  .layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .card h2 { font-size: 1.1rem; margin-bottom: 16px; }
+
+  /* ---------- Form ---------- */
+  form { display: grid; gap: 14px; }
+  label { display: grid; gap: 6px; font-size: 0.85rem; font-weight: 600; }
+
+  input, select {
+    font: inherit;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--text);
+  }
+  input:focus, select:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+  }
+
+  .btn {
+    font: inherit;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+
+    padding: 11px 16px;
+    cursor: pointer;
+    background: var(--primary);
+    color: #fff;
+    transition: background 0.2s;
+  }
+  .btn:hover { background: var(--primary-dark); }
+
+  .error { color: var(--danger); font-size: 0.85rem; min-height: 1.2em; }
+
+  /* ---------- Chart ---------- */
+  .chart-wrap { margin-bottom: 24px; }
+  canvas { width: 100%; height: 260px; display: block; }
+
+  /* ---------- List ---------- */
+  .list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .list-header h2 { margin-bottom: 0; }
+
+  ul { list-style: none; }
+
+  .expense {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+
+    border-bottom: 1px solid var(--border);
+  }
+  .expense:last-child { border-bottom: none; }
+
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .expense-info { flex: 1; min-width: 0; }
+  .expense-name {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .expense-meta { font-size: 0.8rem; color: var(--muted); }
+  .expense-amount { font-weight: 700; }
+
+  .delete-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 8px;
+  }
+  .delete-btn:hover { color: var(--danger); background: #fee2e2; }
+
+
+  .empty { text-align: center; color: var(--muted); padding: 24px 0; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .summary { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>💰 Expense Tracker</h1>
+    <p>Track where your money goes, one expense at a time.</p>
+  </header>
+
+  <!-- Summary cards -->
+  <section class="summary" aria-label="Summary">
+    <div class="card">
+      <div class="stat-label">Total this month</div>
+      <div class="stat-value" id="statTotal">$0.00</div>
+      <div class="stat-sub" id="statMonth"></div>
+    </div>
+    <div class="card">
+      <div class="stat-label">Number of expenses</div>
+      <div class="stat-value" id="statCount">0</div>
+      <div class="stat-sub">All time</div>
+    </div>
+    <div class="card">
+
+      <div class="stat-label">Biggest expense</div>
+      <div class="stat-value" id="statBiggest">$0.00</div>
+      <div class="stat-sub" id="statBiggestName">—</div>
+    </div>
+  </section>
+
+  <div class="layout">
+
+    <!-- Add expense form -->
+    <section class="card">
+      <h2>Add expense</h2>
+      <form id="expenseForm" novalidate>
+        <label>Name
+          <input type="text" id="name" placeholder="e.g. Lunch" maxlength="60">
+        </label>
+        <label>Amount ($)
+          <input type="number" id="amount" placeholder="0.00" min="0.01" step="0.01">
+        </label>
+        <label>Category
+          <select id="category">
+            <option value="food">Food</option>
+            <option value="transport">Transport</option>
+            <option value="shopping">Shopping</option>
+            <option value="bills">Bills</option>
+            <option value="other">Other</option>
+          </select>
+        </label>
+        <label>Date
+          <input type="date" id="date">
+        </label>
+        <div class="error" id="formError" role="alert"></div>
+        <button type="submit" class="btn">Add expense</button>
+
+      </form>
+    </section>
+
+    <div>
+      <!-- Bar chart -->
+      <section class="card chart-wrap">
+        <h2>Spending by category</h2>
+        <canvas id="chart"></canvas>
+      </section>
+
+      <!-- Expense list with filter -->
+      <section class="card">
+        <div class="list-header">
+          <h2>Expenses</h2>
+          <select id="filter" aria-label="Filter by category">
+            <option value="all">All categories</option>
+            <option value="food">Food</option>
+            <option value="transport">Transport</option>
+            <option value="shopping">Shopping</option>
+            <option value="bills">Bills</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <ul id="list"></ul>
+      </section>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ==========================================================
+
+   1. CONFIG & STATE
+   ========================================================== */
+const STORAGE_KEY = "expense-tracker-data";
+
+// Each category has a label and a color (used in the chart and list dots)
+const CATEGORIES = {
+  food:      { label: "Food",      color: "#f59e0b" },
+  transport: { label: "Transport", color: "#3b82f6" },
+  shopping:  { label: "Shopping",  color: "#ec4899" },
+  bills:     { label: "Bills",     color: "#10b981" },
+  other:     { label: "Other",     color: "#8b5cf6" }
+};
+
+// The single source of truth: an array of expense objects
+// { id, name, amount, category, date }
+let expenses = loadExpenses();
+
+/* ==========================================================
+   2. DOM REFERENCES
+   ========================================================== */
+const form        = document.getElementById("expenseForm");
+const nameInput   = document.getElementById("name");
+const amountInput = document.getElementById("amount");
+const catInput    = document.getElementById("category");
+const dateInput   = document.getElementById("date");
+const formError   = document.getElementById("formError");
+const filterSel   = document.getElementById("filter");
+const listEl      = document.getElementById("list");
+const canvas      = document.getElementById("chart");
+
+/* ==========================================================
+   3. LOCAL STORAGE HELPERS
+
+   ========================================================== */
+function loadExpenses() {
+  try {
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    // If the stored data is corrupted, start fresh instead of crashing
+    return [];
+  }
+}
+
+function saveExpenses() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+}
+
+/* ==========================================================
+   4. SMALL UTILITIES
+   ========================================================== */
+// Format a number as currency, e.g. 12.5 -> "$12.50"
+function formatMoney(n) {
+  return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+}
+
+// Today's date as "YYYY-MM-DD" (using local time, not UTC)
+function todayString() {
+  const d = new Date();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${month}-${day}`;
+}
+
+// Show a stored "YYYY-MM-DD" date in a friendly way
+
+function formatDate(str) {
+  const [y, m, d] = str.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+    month: "short", day: "numeric", year: "numeric"
+  });
+}
+
+/* ==========================================================
+   5. ADD & DELETE EXPENSES
+   ========================================================== */
+form.addEventListener("submit", (event) => {
+  event.preventDefault(); // stop the page from reloading
+
+  const name = nameInput.value.trim();
+  const amount = parseFloat(amountInput.value);
+  const date = dateInput.value;
+
+  // Simple validation
+  if (!name) return showError("Please enter a name.");
+  if (!amount || amount <= 0) return showError("Amount must be greater than 0.");
+  if (!date) return showError("Please pick a date.");
+
+  expenses.push({
+    id: Date.now(),           // unique enough for a small app
+    name,
+    amount,
+    category: catInput.value,
+    date
+  });
+
+  saveExpenses();
+  showError("");
+
+  nameInput.value = "";
+  amountInput.value = "";
+  nameInput.focus();
+  render();
+});
+
+function showError(message) {
+  formError.textContent = message;
+}
+
+function deleteExpense(id) {
+  expenses = expenses.filter((e) => e.id !== id);
+  saveExpenses();
+  render();
+}
+
+// Event delegation: one listener on the <ul> handles every delete button
+listEl.addEventListener("click", (event) => {
+  const btn = event.target.closest(".delete-btn");
+  if (btn) deleteExpense(Number(btn.dataset.id));
+});
+
+/* ==========================================================
+   6. FILTERING
+   ========================================================== */
+filterSel.addEventListener("change", renderList);
+
+function getFilteredExpenses() {
+  const selected = filterSel.value;
+  const filtered = selected === "all"
+    ? expenses
+    : expenses.filter((e) => e.category === selected);
+
+
+  // Newest first (copy the array so we don't reorder the original)
+  return [...filtered].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+}
+
+/* ==========================================================
+   7. RENDER THE EXPENSE LIST
+   ========================================================== */
+function renderList() {
+  const items = getFilteredExpenses();
+
+  if (items.length === 0) {
+    listEl.innerHTML = `<li class="empty">No expenses to show yet.</li>`;
+    return;
+  }
+
+  // Build the HTML for each expense.
+  // We use textContent below for names to avoid injecting raw HTML (XSS safety).
+  listEl.innerHTML = "";
+  items.forEach((e) => {
+    const li = document.createElement("li");
+    li.className = "expense";
+    li.innerHTML = `
+      <span class="dot" style="background:${CATEGORIES[e.category].color}"></span>
+      <div class="expense-info">
+        <div class="expense-name"></div>
+        <div class="expense-meta">${CATEGORIES[e.category].label} · ${formatDate(e.date)}</div>
+      </div>
+      <div class="expense-amount">${formatMoney(e.amount)}</div>
+      <button class="delete-btn" data-id="${e.id}" aria-label="Delete expense">✕</button>
+    `;
+    li.querySelector(".expense-name").textContent = e.name;
+
+    listEl.appendChild(li);
+  });
+}
+
+/* ==========================================================
+   8. SUMMARY CARDS
+   ========================================================== */
+function renderSummary() {
+  const now = new Date();
+  const prefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+  // Total for the current month only (dates start with "YYYY-MM")
+  const monthTotal = expenses
+    .filter((e) => e.date.startsWith(prefix))
+    .reduce((sum, e) => sum + e.amount, 0);
+
+  // Biggest expense overall
+  const biggest = expenses.reduce(
+    (max, e) => (e.amount > max.amount ? e : max),
+    { amount: 0, name: "—" }
+  );
+
+  document.getElementById("statTotal").textContent = formatMoney(monthTotal);
+  document.getElementById("statMonth").textContent =
+    now.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  document.getElementById("statCount").textContent = expenses.length;
+  document.getElementById("statBiggest").textContent = formatMoney(biggest.amount);
+  document.getElementById("statBiggestName").textContent = biggest.name;
+}
+
+/* ==========================================================
+   9. BAR CHART (drawn manually on <canvas>)
+
+   ========================================================== */
+function renderChart() {
+  const ctx = canvas.getContext("2d");
+
+  // Make the canvas sharp on high-DPI screens
+  const dpr = window.devicePixelRatio || 1;
+  const width = canvas.clientWidth;
+  const height = canvas.clientHeight;
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+
+  // Total spending per category
+  const keys = Object.keys(CATEGORIES);
+  const totals = keys.map((key) =>
+    expenses.filter((e) => e.category === key).reduce((s, e) => s + e.amount, 0)
+  );
+  const maxValue = Math.max(...totals, 1); // avoid dividing by zero
+
+  // Chart area (leave room for labels)
+  const pad = { top: 24, right: 12, bottom: 32, left: 12 };
+  const chartH = height - pad.top - pad.bottom;
+  const chartW = width - pad.left - pad.right;
+  const slot = chartW / keys.length;       // horizontal space per bar
+  const barW = Math.min(slot * 0.6, 70);   // bar width
+
+  ctx.font = "12px system-ui, sans-serif";
+  ctx.textAlign = "center";
+
+  // Baseline
+  ctx.strokeStyle = "#e5e7eb";
+
+  ctx.beginPath();
+  ctx.moveTo(pad.left, pad.top + chartH);
+  ctx.lineTo(width - pad.right, pad.top + chartH);
+  ctx.stroke();
+
+  keys.forEach((key, i) => {
+    const barH = (totals[i] / maxValue) * chartH;
+    const x = pad.left + slot * i + (slot - barW) / 2;
+    const y = pad.top + chartH - barH;
+
+    // Bar
+    ctx.fillStyle = CATEGORIES[key].color;
+    ctx.beginPath();
+    ctx.roundRect(x, y, barW, Math.max(barH, 2), 6);
+    ctx.fill();
+
+    // Amount above the bar
+    ctx.fillStyle = "#1f2937";
+    ctx.fillText(totals[i] > 0 ? formatMoney(totals[i]) : "", x + barW / 2, y - 6);
+
+    // Category label below the bar
+    ctx.fillStyle = "#6b7280";
+    ctx.fillText(CATEGORIES[key].label, x + barW / 2, height - 10);
+  });
+}
+
+// Redraw the chart when the window size changes (responsive canvas)
+window.addEventListener("resize", renderChart);
+
+/* ==========================================================
+   10. MAIN RENDER + INITIAL SETUP
+   ========================================================== */
+
+function render() {
+  renderSummary();
+  renderChart();
+  renderList();
+}
+
+dateInput.value = todayString(); // default the date field to today
+render();
+</script>
+</body>
+</html>
