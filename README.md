@@ -25,4 +25,4 @@ Open `index.html` in a browser.
 
 ## Notes
 
-A learning project: there is no backend, so data stays in the browser where it was entered. Amounts are shown in dollars for simplicity.
+A learning project: there is no backend, so data stays in the browser where it was entered. Amounts are shown in Egyptian pounds (EGP).
