@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Masroufi | Monthly Spending Log (EGP)</title>
+<title>مصروفي | سجل مصروفك الشهري (EGP)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   /* ---------- Design tokens ---------- */
   :root {
@@ -190,31 +193,40 @@ header h1{font-size:2.3rem;letter-spacing:.02em;color:var(--primary)}
 .btn{text-transform:uppercase;letter-spacing:.06em;font-size:.85rem}
 .expense{border-bottom:1px dashed var(--border)}
 @media(max-width:860px){.layout{grid-template-columns:1fr}.layout>section.card{order:0}.summary{grid-template-columns:1fr}}
+body[dir=rtl],html[dir=rtl] body{font-family:"Cairo",system-ui,sans-serif}
+html[dir=rtl] header h1{font-family:"Cairo",sans-serif;letter-spacing:0}
+html[dir=rtl] .btn{letter-spacing:0;text-transform:none;font-size:1rem}
+html[dir=rtl] .stat-label{font-style:normal}
+html[dir=rtl] .summary .card:first-child{border-color:var(--primary-dark)}
+html[dir=rtl] .amt,html[dir=rtl] .stat-value,html[dir=rtl] .expense-amount{direction:ltr;text-align:right;unicode-bidi:isolate}
+.lang{position:absolute;top:16px;inset-inline-end:16px;background:none;border:1px solid var(--primary);color:var(--primary);border-radius:4px;padding:4px 12px;font:inherit;font-size:.85rem;cursor:pointer}
+.container{position:relative}
 </style>
 </head>
 <body>
 <div class="container">
+  <button type="button" class="lang" id="langBtn">English</button>
 
   <header>
-    <h1>Masroufi</h1>
-    <p>Where did this month's pocket money go? Log it in Egyptian pounds.</p>
+    <h1 id="t-title">مصروفي</h1>
+    <p id="t-sub">المصروف راح فين الشهر ده؟ سجّله بالجنيه المصري.</p>
   </header>
 
   <!-- Summary cards -->
   <section class="summary" aria-label="Summary">
     <div class="card">
-      <div class="stat-label">Spent this month</div>
+      <div class="stat-label" id="t-spent">صرفت الشهر ده</div>
       <div class="stat-value" id="statTotal">0.00 EGP</div>
       <div class="stat-sub" id="statMonth"></div>
     </div>
     <div class="card">
-      <div class="stat-label">Entries logged</div>
+      <div class="stat-label" id="t-entries">عدد المصاريف</div>
       <div class="stat-value" id="statCount">0</div>
-      <div class="stat-sub">All time</div>
+      <div class="stat-sub" id="t-all">من أول ما بدأت</div>
     </div>
     <div class="card">
 
-      <div class="stat-label">Biggest expense</div>
+      <div class="stat-label" id="t-big">أكبر مصروف</div>
       <div class="stat-value" id="statBiggest">0.00 EGP</div>
       <div class="stat-sub" id="statBiggestName">—</div>
     </div>
@@ -224,28 +236,28 @@ header h1{font-size:2.3rem;letter-spacing:.02em;color:var(--primary)}
 
     <!-- Add expense form -->
     <section class="card">
-      <h2>Log a spend</h2>
+      <h2 id="t-log">سجّل مصروف</h2>
       <form id="expenseForm" novalidate>
-        <label>Name
-          <input type="text" id="name" placeholder="e.g. Koshary lunch" maxlength="60">
+        <label><span id="t-name">الاسم</span>
+          <input type="text" id="name" placeholder="مثلاً: غدا كشري" maxlength="60">
         </label>
-        <label>Amount (EGP)
+        <label><span id="t-amount">المبلغ (EGP)</span>
           <input type="number" id="amount" placeholder="0.00" min="0.01" step="0.01">
         </label>
-        <label>Category
+        <label><span id="t-cat">النوع</span>
           <select id="category">
-            <option value="food">Food</option>
-            <option value="transport">Transport</option>
-            <option value="shopping">Shopping</option>
-            <option value="bills">Bills</option>
-            <option value="other">Other</option>
+            <option value="food" data-cat="food">Food</option>
+            <option value="transport" data-cat="transport">Transport</option>
+            <option value="shopping" data-cat="shopping">Shopping</option>
+            <option value="bills" data-cat="bills">Bills</option>
+            <option value="other" data-cat="other">Other</option>
           </select>
         </label>
-        <label>Date
+        <label><span id="t-date">التاريخ</span>
           <input type="date" id="date">
         </label>
         <div class="error" id="formError" role="alert"></div>
-        <button type="submit" class="btn">Add expense</button>
+        <button type="submit" class="btn" id="t-add">أضف المصروف</button>
 
       </form>
     </section>
@@ -253,21 +265,21 @@ header h1{font-size:2.3rem;letter-spacing:.02em;color:var(--primary)}
     <div>
       <!-- Bar chart -->
       <section class="card chart-wrap">
-        <h2>Where it went</h2>
+        <h2 id="t-where">راح فين</h2>
         <canvas id="chart"></canvas>
       </section>
 
       <!-- Expense list with filter -->
       <section class="card">
         <div class="list-header">
-          <h2>History</h2>
+          <h2 id="t-hist">السجل</h2>
           <select id="filter" aria-label="Filter by category">
-            <option value="all">All categories</option>
-            <option value="food">Food</option>
-            <option value="transport">Transport</option>
-            <option value="shopping">Shopping</option>
-            <option value="bills">Bills</option>
-            <option value="other">Other</option>
+            <option value="all">كل الأنواع</option>
+            <option value="food" data-cat="food">Food</option>
+            <option value="transport" data-cat="transport">Transport</option>
+            <option value="shopping" data-cat="shopping">Shopping</option>
+            <option value="bills" data-cat="bills">Bills</option>
+            <option value="other" data-cat="other">Other</option>
           </select>
         </div>
         <ul id="list"></ul>
@@ -286,12 +298,30 @@ const STORAGE_KEY = "expense-tracker-data";
 
 // Each category has a label and a color (used in the chart and list dots)
 const CATEGORIES = {
-  food:      { label: "Food",      color: "#f59e0b" },
-  transport: { label: "Transport", color: "#3b82f6" },
-  shopping:  { label: "Shopping",  color: "#ec4899" },
-  bills:     { label: "Bills",     color: "#10b981" },
-  other:     { label: "Other",     color: "#8b5cf6" }
+  food:      { label: "أكل",      color: "#f59e0b" },
+  transport: { label: "مواصلات", color: "#3b82f6" },
+  shopping:  { label: "شوبينج",  color: "#ec4899" },
+  bills:     { label: "فواتير",     color: "#10b981" },
+  other:     { label: "حاجات تانية",     color: "#8b5cf6" }
 };
+const I18N = {
+  ar: {
+    cats: { food: "أكل", transport: "مواصلات", shopping: "شوبينج", bills: "فواتير", other: "حاجات تانية" },
+    locale: "ar-EG", title: "مصروفي | سجل مصروفك الشهري (EGP)", btn: "English",
+    ids: { "t-title": "مصروفي", "t-sub": "المصروف راح فين الشهر ده؟ سجّله بالجنيه المصري.", "t-spent": "صرفت الشهر ده", "t-entries": "عدد المصاريف", "t-all": "من أول ما بدأت", "t-big": "أكبر مصروف", "t-log": "سجّل مصروف", "t-name": "الاسم", "t-amount": "المبلغ (EGP)", "t-cat": "النوع", "t-date": "التاريخ", "t-add": "أضف المصروف", "t-where": "راح فين", "t-hist": "السجل" },
+    placeholder: "مثلاً: غدا كشري", all: "كل الأنواع", filterLabel: "فلتر حسب النوع", del: "امسح المصروف",
+    empty: "مفيش مصاريف لسه.", errName: "اكتب اسم المصروف.", errAmount: "المبلغ لازم يكون أكبر من صفر.", errDate: "اختار التاريخ."
+  },
+  en: {
+    cats: { food: "Food", transport: "Transport", shopping: "Shopping", bills: "Bills", other: "Other" },
+    locale: "en-US", title: "Masroufi | Monthly Spending Log (EGP)", btn: "عربي",
+    ids: { "t-title": "Masroufi", "t-sub": "Where did this month's pocket money go? Log it in Egyptian pounds.", "t-spent": "Spent this month", "t-entries": "Entries logged", "t-all": "All time", "t-big": "Biggest expense", "t-log": "Log a spend", "t-name": "Name", "t-amount": "Amount (EGP)", "t-cat": "Category", "t-date": "Date", "t-add": "Add expense", "t-where": "Where it went", "t-hist": "History" },
+    placeholder: "e.g. Koshary lunch", all: "All categories", filterLabel: "Filter by category", del: "Delete expense",
+    empty: "No expenses to show yet.", errName: "Please enter a name.", errAmount: "Amount must be greater than 0.", errDate: "Please pick a date."
+  }
+};
+let lang = localStorage.getItem("masroufi-lang") === "en" ? "en" : "ar";
+const T = () => I18N[lang];
 
 // The single source of truth: an array of expense objects
 // { id, name, amount, category, date }
@@ -348,7 +378,7 @@ function todayString() {
 
 function formatDate(str) {
   const [y, m, d] = str.split("-").map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+  return new Date(y, m - 1, d).toLocaleDateString(T().locale, {
     month: "short", day: "numeric", year: "numeric"
   });
 }
@@ -364,9 +394,9 @@ form.addEventListener("submit", (event) => {
   const date = dateInput.value;
 
   // Simple validation
-  if (!name) return showError("Please enter a name.");
-  if (!amount || amount <= 0) return showError("Amount must be greater than 0.");
-  if (!date) return showError("Please pick a date.");
+  if (!name) return showError(T().errName);
+  if (!amount || amount <= 0) return showError(T().errAmount);
+  if (!date) return showError(T().errDate);
 
   expenses.push({
     id: Date.now(),           // unique enough for a small app
@@ -424,7 +454,7 @@ function renderList() {
   const items = getFilteredExpenses();
 
   if (items.length === 0) {
-    listEl.innerHTML = `<li class="empty">No expenses to show yet.</li>`;
+    listEl.innerHTML = `<li class="empty">${T().empty}</li>`;
     return;
   }
 
@@ -438,10 +468,10 @@ function renderList() {
       <span class="dot" style="background:${CATEGORIES[e.category].color}"></span>
       <div class="expense-info">
         <div class="expense-name"></div>
-        <div class="expense-meta">${CATEGORIES[e.category].label} · ${formatDate(e.date)}</div>
+        <div class="expense-meta">${T().cats[e.category]} · ${formatDate(e.date)}</div>
       </div>
       <div class="expense-amount">${formatMoney(e.amount)}</div>
-      <button class="delete-btn" data-id="${e.id}" aria-label="Delete expense">✕</button>
+      <button class="delete-btn" data-id="${e.id}" aria-label="${T().del}">✕</button>
     `;
     li.querySelector(".expense-name").textContent = e.name;
 
@@ -469,7 +499,7 @@ function renderSummary() {
 
   document.getElementById("statTotal").textContent = formatMoney(monthTotal);
   document.getElementById("statMonth").textContent =
-    now.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    now.toLocaleDateString(T().locale, { month: "long", year: "numeric" });
   document.getElementById("statCount").textContent = expenses.length;
   document.getElementById("statBiggest").textContent = formatMoney(biggest.amount);
   document.getElementById("statBiggestName").textContent = biggest.name;
@@ -505,7 +535,7 @@ function renderChart() {
   const slot = chartW / keys.length;       // horizontal space per bar
   const barW = Math.min(slot * 0.6, 70);   // bar width
 
-  ctx.font = "12px system-ui, sans-serif";
+  ctx.font = "12px Cairo, system-ui, sans-serif";
   ctx.textAlign = "center";
 
   // Baseline
@@ -533,7 +563,7 @@ function renderChart() {
 
     // Category label below the bar
     ctx.fillStyle = "#6b7280";
-    ctx.fillText(CATEGORIES[key].label, x + barW / 2, height - 10);
+    ctx.fillText(T().cats[key], x + barW / 2, height - 10);
   });
 }
 
@@ -550,8 +580,27 @@ function render() {
   renderList();
 }
 
+function applyLang() {
+  const t = T();
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+  document.title = t.title;
+  for (const id in t.ids) document.getElementById(id).textContent = t.ids[id];
+  nameInput.placeholder = t.placeholder;
+  filterSel.setAttribute("aria-label", t.filterLabel);
+  filterSel.querySelector('option[value="all"]').textContent = t.all;
+  document.querySelectorAll("option[data-cat]").forEach((o) => { o.textContent = t.cats[o.dataset.cat]; });
+  document.getElementById("langBtn").textContent = t.btn;
+  render();
+}
+document.getElementById("langBtn").addEventListener("click", () => {
+  lang = lang === "ar" ? "en" : "ar";
+  localStorage.setItem("masroufi-lang", lang);
+  applyLang();
+});
+
 dateInput.value = todayString(); // default the date field to today
-render();
+applyLang();
 </script>
 </body>
 </html>
