@@ -172,6 +172,24 @@
   @media (max-width: 600px) {
     .summary { grid-template-columns: 1fr; }
   }
+
+/* ---------- Masroufi: ledger look ---------- */
+:root{--bg:#f6f1e4;--card:#fffdf6;--text:#23302a;--muted:#6f7a70;--border:#ddd5bf;--primary:#1f6b4a;--primary-dark:#175238;--radius:6px;--shadow:none}
+body{font-family:Georgia,"Times New Roman",serif;background:var(--bg) repeating-linear-gradient(0deg,transparent 0 31px,rgba(31,107,74,.07) 31px 32px)}
+header{border-bottom:3px double var(--primary);padding-bottom:14px}
+header h1{font-size:2.3rem;letter-spacing:.02em;color:var(--primary)}
+.card{border:1px solid var(--border);border-top:4px solid var(--primary)}
+.summary{grid-template-columns:2fr 1fr 1fr}
+.summary .card:first-child{background:var(--primary);color:#fff;border-color:var(--primary-dark)}
+.summary .card:first-child .stat-label,.summary .card:first-child .stat-sub{color:#cfe8da}
+.stat-value,.expense-amount{font-family:"Courier New",monospace;font-variant-numeric:tabular-nums}
+.stat-label{text-transform:none;letter-spacing:0;font-style:italic}
+.layout{grid-template-columns:1fr 330px}
+.layout>section.card{order:2}
+.btn,input,select{border-radius:4px}
+.btn{text-transform:uppercase;letter-spacing:.06em;font-size:.85rem}
+.expense{border-bottom:1px dashed var(--border)}
+@media(max-width:860px){.layout{grid-template-columns:1fr}.layout>section.card{order:0}.summary{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
